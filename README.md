@@ -1,1 +1,1 @@
-## Only run the app with real device, emulator cant catch the task audio
+## Only run the app with real device, emulator cant catch the audio task
