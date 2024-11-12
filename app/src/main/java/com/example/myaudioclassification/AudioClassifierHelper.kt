@@ -16,11 +16,11 @@ import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
 class AudioClassifierHelper(
-    val threshold: Float = 0.1f,
-    val maxResults: Int = 3,
-    val modelName: String = "yamnet.tflite",
-    val runningMode: RunningMode = RunningMode.AUDIO_STREAM,
-    val overlap: Float = 0.5f,
+    private val threshold: Float = 0.1f,
+    private val maxResults: Int = 3,
+    private val modelName: String = "yamnet.tflite",
+    private val runningMode: RunningMode = RunningMode.AUDIO_STREAM,
+    private val overlap: Float = 0.5f,
     val context: Context,
     var classifierListener: ClassifierListener? = null,
 ) {
@@ -91,7 +91,7 @@ class AudioClassifierHelper(
         val lengthInMilliSeconds = ((REQUIRE_INPUT_BUFFER_SIZE * 1.0f) / SAMPLING_RATE_IN_HZ) * 1000
         val interval = (lengthInMilliSeconds * (1 - overlap)).toLong()
 
-        executor?.scheduleAtFixedRate(
+        executor?.scheduleWithFixedDelay(
             classifyRunnable,
             0,
             interval,
