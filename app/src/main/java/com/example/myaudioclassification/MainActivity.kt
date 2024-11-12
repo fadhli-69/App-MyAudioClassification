@@ -1,5 +1,6 @@
 package com.example.myaudioclassification
 
+import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
@@ -11,13 +12,13 @@ import com.google.mediapipe.tasks.components.containers.Classifications
 import java.text.NumberFormat
 
 class MainActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityMainBinding
     private lateinit var audioClassifierHelper: AudioClassifierHelper
     private var isRecording = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -25,55 +26,6 @@ class MainActivity : AppCompatActivity() {
         setClickListener()
         updateButtonStates()
         requestPermissionsIfNeeded()
-    }
-
-        private fun requestPermissionsIfNeeded() {
-            if (!allPermissionsGranted()) {
-                requestPermissionLauncher.launch(REQUIRED_PERMISSION)
-            }
-        }
-
-    private fun allPermissionsGranted() =
-        ContextCompat.checkSelfPermission(
-            this,
-            REQUIRED_PERMISSION
-        ) == PackageManager.PERMISSION_GRANTED
-
-    private val requestPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            val message = if (isGranted) "Permission granted" else "Permission denied"
-            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-        }
-
-    override fun onResume() {
-        super.onResume()
-        if(!isRecording)
-        audioClassifierHelper.startAudioClassification()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        if (::audioClassifierHelper.isInitialized) {
-            audioClassifierHelper.stopAudioClassification()
-        }
-    }
-
-    private fun updateButtonStates() {
-        binding.btnStart.isEnabled = !isRecording
-        binding.btnStop.isEnabled = isRecording
-    }
-
-    private fun setClickListener() {
-        binding.btnStart.setOnClickListener {
-            audioClassifierHelper.startAudioClassification()
-            isRecording = true
-            updateButtonStates()
-        }
-        binding.btnStop.setOnClickListener {
-            audioClassifierHelper.stopAudioClassification()
-            isRecording = false
-            updateButtonStates()
-        }
     }
 
     private fun initializeAudioClassifierHelper() {
@@ -106,7 +58,58 @@ class MainActivity : AppCompatActivity() {
             }
         )
     }
+
+    private fun setClickListener() {
+        binding.btnStart.setOnClickListener {
+            audioClassifierHelper.startAudioClassification()
+            isRecording = true
+            updateButtonStates()
+        }
+        binding.btnStop.setOnClickListener {
+            audioClassifierHelper.stopAudioClassification()
+            isRecording = false
+            updateButtonStates()
+        }
+    }
+
+    private fun updateButtonStates() {
+        binding.btnStart.isEnabled = !isRecording
+        binding.btnStop.isEnabled = isRecording
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (isRecording) {
+            audioClassifierHelper.startAudioClassification()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (::audioClassifierHelper.isInitialized) {
+            audioClassifierHelper.stopAudioClassification()
+        }
+    }
+
+    private fun requestPermissionsIfNeeded() {
+        if (!allPermissionsGranted()) {
+            requestPermissionLauncher.launch(REQUIRED_PERMISSION)
+        }
+    }
+
+    private fun allPermissionsGranted() =
+        ContextCompat.checkSelfPermission(
+            this,
+            REQUIRED_PERMISSION
+        ) == PackageManager.PERMISSION_GRANTED
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+            val message = if (isGranted) "Permission granted" else "Permission denied"
+            Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        }
+
     companion object {
-        private const val REQUIRED_PERMISSION = "android.permission.RECORD_AUDIO"
+        private const val REQUIRED_PERMISSION = Manifest.permission.RECORD_AUDIO
     }
 }

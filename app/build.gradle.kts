@@ -48,5 +48,6 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    implementation("com.google.mediapipe:tasks-audio:0.20230731")
+
+    implementation(libs.tasks.audio)
 }

@@ -9,20 +9,22 @@ import com.google.mediapipe.tasks.audio.audioclassifier.AudioClassifier
 import com.google.mediapipe.tasks.audio.audioclassifier.AudioClassifierResult
 import com.google.mediapipe.tasks.audio.core.RunningMode
 import com.google.mediapipe.tasks.components.containers.AudioData
+import com.google.mediapipe.tasks.components.containers.AudioData.AudioDataFormat
 import com.google.mediapipe.tasks.components.containers.Classifications
 import com.google.mediapipe.tasks.core.BaseOptions
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
 class AudioClassifierHelper(
-    private val threshold: Float = 0.1f,
-    private val maxResults: Int = 3,
-    private val modelName: String = "yamnet.tflite",
-    private val runningMode: RunningMode = RunningMode.AUDIO_STREAM,
-    private val overlap: Float = 0.5f,
-    private val context: Context,
-    private var classifierListener: ClassifierListener? = null,
+    val threshold: Float = 0.1f,
+    val maxResults: Int = 3,
+    val modelName: String = "yamnet.tflite",
+    val runningMode: RunningMode = RunningMode.AUDIO_STREAM,
+    val overlap: Float = 0.5f,
+    val context: Context,
+    var classifierListener: ClassifierListener? = null,
 ) {
+
     private var audioClassifier: AudioClassifier? = null
     private var recorder: AudioRecord? = null
     private var executor: ScheduledThreadPoolExecutor? = null
@@ -37,7 +39,6 @@ class AudioClassifierHelper(
                 .setScoreThreshold(threshold)
                 .setMaxResults(maxResults)
                 .setRunningMode(runningMode)
-
 
             if (runningMode == RunningMode.AUDIO_STREAM) {
                 optionsBuilder
@@ -83,8 +84,12 @@ class AudioClassifierHelper(
             recorder?.let { classifyAudioAsync(it) }
         }
 
+        // Each model will expect a specific audio recording length. This formula calculates that
+        // length using the input buffer size and tensor format sample rate.
+        // For example, YAMNET expects 0.975 second length recordings.
+        // This needs to be in milliseconds to avoid the required Long value dropping decimals.
         val lengthInMilliSeconds = ((REQUIRE_INPUT_BUFFER_SIZE * 1.0f) / SAMPLING_RATE_IN_HZ) * 1000
-        val interval = (lengthInMilliSeconds * (1 - (overlap * 0.25))).toLong()
+        val interval = (lengthInMilliSeconds * (1 - overlap)).toLong()
 
         executor?.scheduleAtFixedRate(
             classifyRunnable,
@@ -96,10 +101,9 @@ class AudioClassifierHelper(
 
     private fun classifyAudioAsync(audioRecord: AudioRecord) {
         val audioData = AudioData.create(
-            AudioData.AudioDataFormat.create(recorder?.format), SAMPLING_RATE_IN_HZ
+            AudioDataFormat.create(recorder?.format), SAMPLING_RATE_IN_HZ
         )
         audioData.load(audioRecord)
-
 
         val inferenceTime = SystemClock.uptimeMillis()
         audioClassifier?.classifyAsync(audioData, inferenceTime)
